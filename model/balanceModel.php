@@ -3,64 +3,91 @@
 	class Balance extends Connect
 	{
 		
-		public function fetch($studentnumber){
+		public function fetch($studentNumber){
+
             $data=array();
-            $sql = "SELECT * FROM enrollbalance  where studnumber = `?`";
+            $sql = "SELECT * FROM enrollbalance WHERE studnumber = ? LIMIT 5 ";
 			$stmt = $this->db->prepare($sql);
-			$stmt->execute([$studentnumber]);
+			$stmt->execute([$studentNumber]);
 			$data = $stmt->fetchAll();
+			
 			return $data;
         }
 
 		
-		// function checkExist($program)
-		// {
-		
-		// 	$data=array();
-        //     $sql = "SELECT `program` FROM program WHERE `program`=?";
-		// 	$stmt = $this->db->prepare($sql);
-		// 	$stmt->execute([$program]);
-        //     $data = $stmt->fetch(PDO::FETCH_ASSOC);
-		// 	if($data>0) return "1";
-        //     else return "0"; 
-		// }
-		
-        // public function fetch(){
-        //     $data=array();
-        //     $sql = "SELECT * FROM program order by `id` asc";
-		// 	$stmt = $this->db->prepare($sql);
-		// 	$stmt->execute();
-		// 	$data = $stmt->fetchAll();
-		// 	return $data;
-        // }
+		public function balanceValidation($studentNumber,$syear,$semester,$balance)
+		{
+			
+			$legendData=array();
+			$clearBalanceData=array();
+			$legendSql = "SELECT * FROM enrollbalance 
+			INNER JOIN legend ON 
+			enrollbalance.syear = legend.schoolyear 
+			AND enrollbalance.semester = legend.semester
+			WHERE enrollbalance.studnumber = ?";
+			$legendStmt = $this->db->prepare($legendSql);
+			$legendStmt->execute([$studentNumber]);
+			$legendData = $legendStmt->fetch(PDO::FETCH_ASSOC);
+			if($legendData > 0)
+			{
+				return  1;
+			}
+			else
+			{
+				$balanceSql = "SELECT * FROM enrollbalance WHERE studnumber = ?";
+				$balanceStmt = $this->db->prepare($balanceSql);
+				$balanceStmt->execute([$studentNumber]);
+				$balanceData = $balanceStmt->fetch(PDO::FETCH_ASSOC);
+				if($balanceData <= 0)
+				{
+					return  2;
+				}
+				else
+				{
+					$scholarshipSql= "SELECT * FROM enrollbalance INNER JOIN `enrollfeesummary`
+					ON enrollbalance.studnumber = enrollfeesummary.studnumber
+					WHERE enrollbalance.syear = enrollfeesummary.syear 
+					AND enrollbalance.semester = enrollfeesummary.semester
+					AND enrollfeesummary.scholarship != 'RA 10931' AND enrollbalance.balance != '0.00'
+					AND enrollbalance.studnumber =?";
+					$scholarshipStmt = $this->db->prepare($scholarshipSql);
+					$scholarshipStmt->execute([$studentNumber]);
+					$scholarshipData = $scholarshipStmt->fetch(PDO::FETCH_ASSOC);
+					if($scholarshipData > 0)
+					{
+						return  3;
+					}	
+					else{
+						return 0;
+					}
+				}
 
-        // function save($program){
-		// 	$addData=[];
-		// 	$addData=[
-		// 		'program'=>$program,
-		// 	];
-        //     $sql = "INSERT INTO program(`program`) 
-		// 	VALUES (:program)";
-		// 	$stmt = $this->db->prepare($sql);
-		// 	$stmt->execute($addData);
-		// 	if($stmt) return 1;
-		// 	else return 0;
-		// }
+			}
+		}
 
-		
-		// function update($programId,$programName){
-        //     $updateData=[];
-		// 	$updateData=[
-		// 		'programId'=>$programId,
-		// 		'programName'=>$programName
-		// 	];
-		// 	$sql = "UPDATE program SET `program`=:programName
-		// 	WHERE `id`=:programId";
-		// 	$stmt = $this->db->prepare($sql);
-		// 	$stmt->execute($updateData);
-		// 	if($stmt) return 1;
-		// 	else return 0;
-		// }
+		function update($studentNumber,$syear,$semester,$timeStamp){
+			$sql = "DELETE FROM enrollbalance WHERE `studnumber`=?";
+			$stmt = $this->db->prepare($sql);
+			$stmt->execute([$studentNumber]);
+			if($stmt)
+			{
+				$addData=[];
+				$addData=[
+					'studentNumber'=>$studentNumber,
+					'syear'=>$syear,
+					'semester'=>$semester,
+					'timeStamp'=> $timeStamp
+				];
+				$sql = "INSERT INTO enrollcleared(`studnumber`,`syear`,`semester`,`datecleared`)
+				VALUES (:studentNumber,:syear,:semester,:timeStamp)";
+				$stmt = $this->db->prepare($sql);
+				$stmt->execute($addData);
+				if($stmt) return 1;
+				else return 0;
+			}
+			else return 0;
+           
+		}
 
 		// function delete($programId)
 		// {

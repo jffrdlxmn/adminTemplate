@@ -1,18 +1,20 @@
 <?php
+    date_default_timezone_set('Asia/Manila');
+    include('../../model/balanceModel.php');
+    $balance = new balance();
     
-    include('../../model/userModel.php');
-    $user = new User();
+    $timeStamp=date_create()->format("Y-m-d H:i:s.v");
 
-    $pass =$_POST['newPassword'];
+ 
       
-    if(isset($_POST['newPassword'],$_POST['id']))
+    if(isset($_POST['studentNumber'],$_POST['syear'],$_POST['semester']))
     {
-        $received = $user->update($_POST['id'],$_POST['newPassword']);
+        $received = $balance->update($_POST['studentNumber'],$_POST['syear'],$_POST['semester'],$timeStamp);
         if($received == 1)echo '1';   
         exit();
     }
     else{
-        echo "alert($pass)";
+        echo "alert('error')";
         exit();
     }
 

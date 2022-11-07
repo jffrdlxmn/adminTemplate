@@ -199,6 +199,18 @@
       color:black;
       content:""!important;
     }
+
+    #filters
+    {
+      margin-bottom: auto;
+      margin-top: auto;
+      height: 60px;
+      background-color: #fff!important;
+      border-radius: 20px;
+      padding: 20px;
+  
+    }
+   
   
     
     
